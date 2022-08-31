@@ -4,20 +4,18 @@
 EAPI=7
 
 MY_PN="LookingGlass"
-MY_PV="a11"
 EGIT_REPO_URI="https://github.com/gnif/${MY_PN}.git"
 EGIT_SUBMODULES=( '*' )
 
-inherit cmake git-r3 linux-mod
+inherit cmake git-r3 linux-mod desktop
 
 DESCRIPTION="A low latency KVM FrameRelay implementation for guests with VGA PCI Passthrough"
 HOMEPAGE="https://looking-glass.io https://github.com/gnif/LookingGlass"
-SRC_URI="host? ( https://github.com/gnif/${MY_PN}/releases/download/${MY_PV}/looking-glass-host-${MY_PV}.zip )"
 
 LICENSE="GPL-2"
 SLOT="0"
 KEYWORDS=""
-IUSE="debug +host module"
+IUSE="debug module"
 
 RDEPEND="dev-libs/libconfig:0=
 	dev-libs/nettle:=[gmp]
@@ -70,14 +68,12 @@ src_install() {
 
 	dobin "${BUILD_DIR}"/looking-glass-client
 
-	if use host ; then
-		insinto /usr/share/"${PN}"
-		doins "${DISTDIR}"/looking-glass-host-"${MY_PV}".zip
-	fi
-
 	if use module; then
 		linux-mod_src_install
 	fi
+
+	newicon resources/icon-128x128.png looking-glass.png
+	domenu "${FILESDIR}/looking-glass.desktop"
 }
 
 pkg_postinst() {
