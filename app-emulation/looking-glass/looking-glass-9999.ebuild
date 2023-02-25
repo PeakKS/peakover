@@ -78,6 +78,7 @@ src_install() {
 
 pkg_postinst() {
 	if use module; then
+		linux-mod-pkg_postinst
 		elog "You have installed the kvmfr kernel module for DMABUF"
 		elog "To set up for using the module, please visit https://looking-glass.io/docs/stable/module/#usage"
 	fi
