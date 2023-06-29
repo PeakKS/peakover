@@ -1,6 +1,6 @@
 BDEPEND=app-arch/unzip virtual/pkgconfig >=dev-util/ninja-1.8.2 >=dev-util/cmake-3.20.5 >=dev-vcs/git-1.8.2.1[curl]
 DEFINED_PHASES=compile configure install postinst postrm preinst prepare setup test unpack
-DEPEND=dev-libs/libconfig:0= dev-libs/nettle:=[gmp] media-libs/freetype:2 media-libs/fontconfig:1.0 media-libs/libsdl2 media-libs/sdl2-ttf virtual/glu app-emulation/spice-protocol kernel_linux? ( sys-apps/kmod[tools] dist-kernel? ( virtual/dist-kernel:= ) ) sys-apps/sed kernel_linux? ( virtual/linux-sources virtual/libelf )
+DEPEND=dev-libs/libconfig:0= dev-libs/nettle:=[gmp] media-libs/freetype:2 media-libs/fontconfig:1.0 media-libs/libsdl2 media-libs/sdl2-ttf virtual/glu app-emulation/spice-protocol kernel_linux? ( sys-apps/kmod[tools] dist-kernel? ( virtual/dist-kernel:= ) ) kernel_linux? ( virtual/linux-sources virtual/libelf )
 DESCRIPTION=A low latency KVM FrameRelay implementation for guests with VGA PCI Passthrough
 EAPI=7
 HOMEPAGE=https://looking-glass.io https://github.com/gnif/LookingGlass
@@ -10,5 +10,5 @@ LICENSE=GPL-2
 PROPERTIES=live
 RDEPEND=dev-libs/libconfig:0= dev-libs/nettle:=[gmp] media-libs/freetype:2 media-libs/fontconfig:1.0 media-libs/libsdl2 media-libs/sdl2-ttf virtual/glu kernel_linux? ( sys-apps/kmod[tools] dist-kernel? ( virtual/dist-kernel:= ) )
 SLOT=0
-_eclasses_=toolchain-funcs	1542e649be915f43f6908a9e93909961	multilib	5ca4e49abed8e3a2f7b56920eadee157	edos2unix	33e347e171066657f91f8b0c72ec8773	strip-linguas	ac3ee41ee2d31d8c41a77c0838320cc7	wrapper	4a1902f969e5718126434fc35f3a0d9c	eutils	8f942ebdcf04334697649d4a0bf65a32	flag-o-matic	38d6ec96711cea42a5cb1cc723a6e906	multiprocessing	b4e253ab22cef7b1085e9b67c7a3b730	ninja-utils	58ec4e54962bf45d065fb95030701514	xdg-utils	fffb53a53cf17c9c0c998a3c0a590c7e	cmake	44afbf15c35884f7c840470f1cf05d0d	git-r3	b9ac6f96d2a88edb5b351df634dc5e53	linux-info	56708ddc53d8b607ed88fd97a56e59dc	linux-mod	6ff232574f0bcad33767903505553e8d	desktop	22952d8f27cac191d75529d4c38e6bfa
-_md5_=7d1e7493bfcde46958923f8a8084aa0b
+_eclasses_=toolchain-funcs	14a8ae365191b518fad51caad7a08f3e	multilib	c19072c3cd7ac5cb21de013f7e9832e0	edos2unix	33e347e171066657f91f8b0c72ec8773	strip-linguas	ac3ee41ee2d31d8c41a77c0838320cc7	wrapper	4a1902f969e5718126434fc35f3a0d9c	eutils	8f942ebdcf04334697649d4a0bf65a32	flag-o-matic	16483e58fadb0d47b4528f0aa7e171f6	multiprocessing	b4e253ab22cef7b1085e9b67c7a3b730	ninja-utils	76050953ad5b70d7e09a6ca55558db92	xdg-utils	baea6080dd821f5562d715887954c9d3	cmake	7fb5980de96325cbab639f5b2187357c	git-r3	27e13c09a4c7e4c78ac812f74727e676	linux-info	c4f1201b96a8a2c1f3b86cc8b2c71c91	linux-mod	073dc5c9bc044e85d704b503ebc764a2	desktop	021728fdc1b03b36357dbc89489e0f0d
+_md5_=e77c3a55df6faf282be7e7ad287a6138
