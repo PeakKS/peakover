@@ -1,12 +1,13 @@
 BDEPEND=app-arch/rpm2targz
-DEFINED_PHASES=unpack
+DEFINED_PHASES=install postinst postrm preinst unpack
 DESCRIPTION=Mullvad VPN App
 EAPI=8
 HOMEPAGE=https://mullvad.net
-INHERIT=rpm
+IDEPEND=dev-util/desktop-file-utils x11-misc/shared-mime-info
+INHERIT=rpm xdg
 KEYWORDS=~amd64
 LICENSE=GPL-3
 SLOT=0
 SRC_URI=https://github.com/mullvad/mullvadvpn-app/releases/download/2023.4-beta1/MullvadVPN-2023.4-beta1_x86_64.rpm
-_eclasses_=estack	055c42df72f76a4f45ec92b35e83cd56	rpm	f73e907469f65e52192f110dec72dce0
-_md5_=8b032d6d50f58b6f1ca919c38591150b
+_eclasses_=estack	c61c368a76fdf3a82fdf8dbaebea3804	rpm	745ef34afb8c31915d9d42a6aca23a35	xdg-utils	baea6080dd821f5562d715887954c9d3	xdg	4a14c5c24f121e7da66e5aab4a168c6e
+_md5_=0012cad5707e97e5fdf4e3c83e4d3fd1
