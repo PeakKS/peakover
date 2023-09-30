@@ -5,8 +5,8 @@ EAPI=8
 
 inherit meson tmpfiles
 
-DESCRIPTION=""
-HOMEPAGE=""
+DESCRIPTION="Tool for interactive command line environments on Linux"
+HOMEPAGE="https://containertoolbx.org/ https://github.com/containers/toolbox"
 SRC_URI="
 	https://github.com/containers/${PN}/releases/download/${PV}/${P}-vendored.tar.xz -> ${P}-vendored.tar
 "
