@@ -7,7 +7,7 @@ inherit gnome2-utils meson xdg
 
 DESCRIPTION="A simple GTK+ frontend for mpv"
 HOMEPAGE="https://celluloid-player.github.io/"
-SRC_URI="https://github.com/celluloid-player/celluloid/releases/download/v${PV}/${P}.tar.xz"
+SRC_URI="https://github.com/celluloid-player/celluloid/archive/refs/tags/v${PV}.tar.gz"
 
 LICENSE="GPL-3+"
 SLOT="0"
