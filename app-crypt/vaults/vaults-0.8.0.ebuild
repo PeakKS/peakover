@@ -130,7 +130,7 @@ inherit xdg cargo meson gnome2-utils flag-o-matic
 DESCRIPTION="vaults"
 # Double check the homepage as the cargo_metadata crate
 # does not provide this value so instead repository is used
-HOMEPAGE="homepage field in Cargo.toml inaccessible to cargo metadata"
+HOMEPAGE="https://github.com/mpobaschnig/vaults"
 SRC_URI="
 	https://github.com/mpobaschnig/${PN}/archive/refs/tags/v${PV}.tar.gz
 	${CARGO_CRATE_URIS}
