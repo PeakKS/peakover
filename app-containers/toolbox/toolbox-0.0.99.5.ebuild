@@ -21,7 +21,6 @@ DEPEND="
 	dev-go/go-md2man
 "
 RDEPEND="${DEPEND}"
-BDEPEND=""
 
 pkg_postinst() {
 	tmpfiles_process toolbox.conf
