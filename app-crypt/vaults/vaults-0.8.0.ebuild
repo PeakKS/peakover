@@ -127,12 +127,12 @@ CRATES="
 
 inherit xdg cargo meson gnome2-utils flag-o-matic
 
-DESCRIPTION="vaults"
+DESCRIPTION="Keep important files safe"
 # Double check the homepage as the cargo_metadata crate
 # does not provide this value so instead repository is used
 HOMEPAGE="https://github.com/mpobaschnig/vaults"
 SRC_URI="
-	https://github.com/mpobaschnig/${PN}/archive/refs/tags/v${PV}.tar.gz
+	https://github.com/mpobaschnig/${PN}/archive/refs/tags/v${PV}.tar.gz -> ${P}.tar.gz
 	${CARGO_CRATE_URIS}
 "
 ECARGO_HOME="${S}-build/cargo-home"
@@ -187,7 +187,6 @@ src_compile() {
 src_install() {
 	meson_install
 }
-
 
 pkg_postinst() {
 	gnome2_schemas_update
