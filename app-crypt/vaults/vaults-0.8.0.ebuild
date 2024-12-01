@@ -159,7 +159,6 @@ RDEPEND="
 "
 BDEPEND="
 	dev-build/meson
-	virtual/rust
 "
 
 # rust does not use *FLAGS from make.conf, silence portage warning
