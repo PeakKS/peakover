@@ -1,0 +1,40 @@
+From a4c63b1336f87716053fe44b4b33c2be71c0850d Mon Sep 17 00:00:00 2001
+From: PeakKS <bbatson101@gmail.com>
+Date: Sun, 21 Sep 2025 10:44:49 -0400
+Subject: [PATCH 2/2] Restore support for migration path and setting version
+
+Signed-off-by: PeakKS <bbatson101@gmail.com>
+---
+ src/meson.build | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/src/meson.build b/src/meson.build
+index bd3ba20..60f4e12 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -36,6 +36,11 @@ sources = files(
+   'pkg/version/version.go',
+ )
+ 
++go_tags = []
++if migration_path_for_coreos_toolbox
++  go_tags += 'migration_path_for_coreos_toolbox'
++endif
++
+ toolbox_go = custom_target(
+   'toolbox',
+   command: [
+@@ -44,6 +49,10 @@ toolbox_go = custom_target(
+     '-C', meson.current_source_dir(),
+     '-trimpath',
+     '-buildmode=c-archive',
++    '-tags', ','.join(go_tags),
++    '-ldflags',
++    '-X github.com/containers/toolbox/pkg/version.currentVersion='
++    + meson.project_version(),
+     '-o', meson.project_build_root() + '/@OUTPUT@',
+     '@INPUT@',
+   ],
+-- 
+2.51.0
+

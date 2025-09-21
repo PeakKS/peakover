@@ -1,0 +1,397 @@
+From 30349028d1d12900c1665e54abf0012eca103a22 Mon Sep 17 00:00:00 2001
+From: PeakKS <bbatson101@gmail.com>
+Date: Sun, 21 Sep 2025 00:48:12 -0400
+Subject: [PATCH 1/2] Replace build wrapper with native meson targets
+
+Signed-off-by: PeakKS <bbatson101@gmail.com>
+---
+ src/go-build-wrapper              | 122 ------------------------------
+ src/meson.build                   | 117 ++++++++++++++--------------
+ src/meson_generate_completions.py |  34 ---------
+ src/toolbox.go                    |   3 +
+ 4 files changed, 60 insertions(+), 216 deletions(-)
+ delete mode 100755 src/go-build-wrapper
+ delete mode 100644 src/meson_generate_completions.py
+
+diff --git a/src/go-build-wrapper b/src/go-build-wrapper
+deleted file mode 100755
+index a5a1a6a..0000000
+--- a/src/go-build-wrapper
++++ /dev/null
+@@ -1,122 +0,0 @@
+-#!/bin/sh
+-#
+-# Copyright © 2020 – 2024 Red Hat Inc.
+-#
+-# Licensed under the Apache License, Version 2.0 (the "License");
+-# you may not use this file except in compliance with the License.
+-# You may obtain a copy of the License at
+-#
+-#     http://www.apache.org/licenses/LICENSE-2.0
+-#
+-# Unless required by applicable law or agreed to in writing, software
+-# distributed under the License is distributed on an "AS IS" BASIS,
+-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-# See the License for the specific language governing permissions and
+-# limitations under the License.
+-#
+-
+-
+-if [ "$#" -ne 7 ]; then
+-    echo "go-build-wrapper: wrong arguments" >&2
+-    echo "Usage: go-build-wrapper [SOURCE DIR]" >&2
+-    echo "                        [OUTPUT ROOT DIR]" >&2
+-    echo "                        [OUTPUT FILE]" >&2
+-    echo "                        [VERSION]" >&2
+-    echo "                        [C COMPILER]" >&2
+-    echo "                        [DYNAMIC LINKER]" >&2
+-    echo "                        [MIGRATION PATH FOR COREOS/TOOLBOX]" >&2
+-    exit 1
+-fi
+-
+-if ! cd "$1"; then
+-    echo "go-build-wrapper: failed to enter source directory $1"
+-    exit 1
+-fi
+-
+-tags=""
+-if $7; then
+-    tags="-tags migration_path_for_coreos_toolbox"
+-fi
+-
+-if ! libc_dir=$("$5" --print-file-name=libc.so); then
+-    echo "go-build-wrapper: failed to read the path to libc.so" >&2
+-    exit 1
+-fi
+-
+-if ! libc_dir_canonical=$(readlink --canonicalize "$libc_dir"); then
+-    echo "go-build-wrapper: failed to canonicalize the path to libc.so" >&2
+-    exit 1
+-fi
+-
+-if ! libc_dir_canonical_dirname=$(dirname "$libc_dir_canonical"); then
+-    echo "go-build-wrapper: failed to read the dirname of the canonicalized path to libc.so" >&2
+-    exit 1
+-fi
+-
+-if ! dynamic_linker_basename=$(basename "$6"); then
+-    echo "go-build-wrapper: failed to read the basename of dynamic linker $6" >&2
+-    exit 1
+-fi
+-
+-if ! dynamic_linker_canonical=$(readlink --canonicalize "$6"); then
+-    echo "go-build-wrapper: failed to canonicalize dynamic linker $6" >&2
+-    exit 1
+-fi
+-
+-if ! dynamic_linker_canonical_dirname=$(dirname "$dynamic_linker_canonical"); then
+-    echo "go-build-wrapper: failed to read the dirname of the canonicalized dynamic linker $dynamic_linker_canonical" >&2
+-    exit 1
+-fi
+-
+-dynamic_linker="/run/host$dynamic_linker_canonical_dirname/$dynamic_linker_basename"
+-
+-# Note for distributors:
+-#
+-# The '-z now' flag, which is the opposite of '-z lazy', is unsupported as an
+-# external linker flag [1], because of how the NVIDIA Container Toolkit stack
+-# uses dlopen(3) to load libcuda.so.1 and libnvidia-ml.so.1 at runtime [2,3].
+-#
+-# The NVIDIA Container Toolkit stack doesn't use dlsym(3) to obtain the address
+-# of a symbol at runtime before using it.  It links against undefined symbols
+-# at build-time available through a CUDA API definition embedded directly in
+-# the CGO code or a copy of nvml.h.  It relies upon lazily deferring function
+-# call resolution to the point when dlopen(3) is able to load the shared
+-# libraries at runtime, instead of doing it when toolbox(1) is started.
+-#
+-# This is unlike how Toolbx itself uses dlopen(3) and dlsym(3) to load
+-# libsubid.so at runtime.
+-#
+-# Compare the output of:
+-#   $ nm /path/to/toolbox | grep ' subid_init'
+-#
+-# ... with those from:
+-#   $ nm /path/to/toolbox | grep ' nvmlGpuInstanceGetComputeInstanceProfileInfoV'
+-#           U nvmlGpuInstanceGetComputeInstanceProfileInfoV
+-#   $ nm /path/to/toolbox | grep ' nvmlDeviceGetAccountingPids'
+-#           U nvmlDeviceGetAccountingPids
+-#
+-# Using '-z now' as an external linker flag forces the dynamic linker to
+-# resolve all symbols when toolbox(1) is started, and leads to:
+-#   $ toolbox
+-#   toolbox: symbol lookup error: toolbox: undefined symbol:
+-#       nvmlGpuInstanceGetComputeInstanceProfileInfoV
+-#
+-# [1] NVIDIA Container Toolkit commit 1407ace94ab7c150
+-#     https://github.com/NVIDIA/nvidia-container-toolkit/commit/1407ace94ab7c150
+-#     https://github.com/NVIDIA/go-nvml/issues/18
+-#     https://github.com/NVIDIA/nvidia-container-toolkit/issues/49
+-#
+-# [2] https://github.com/NVIDIA/nvidia-container-toolkit/tree/main/internal/cuda
+-#
+-# [3] https://github.com/NVIDIA/go-nvml/blob/main/README.md
+-#     https://github.com/NVIDIA/go-nvml/tree/main/pkg/dl
+-#     https://github.com/NVIDIA/go-nvml/tree/main/pkg/nvml
+-
+-# shellcheck disable=SC2086
+-go build \
+-        $tags \
+-        -trimpath \
+-        -ldflags "-extldflags '-Wl,-dynamic-linker,$dynamic_linker -Wl,-rpath,/run/host$libc_dir_canonical_dirname -Wl,--export-dynamic -Wl,--unresolved-symbols=ignore-in-object-files' -linkmode external -X github.com/containers/toolbox/pkg/version.currentVersion=$4" \
+-        -o "$2/$3"
+-
+-exit "$?"
+diff --git a/src/meson.build b/src/meson.build
+index c178bb3..bd3ba20 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -1,11 +1,6 @@
+-go_build_wrapper_file = files('go-build-wrapper')
+-go_build_wrapper_program = find_program('go-build-wrapper')
+-
+-meson_generate_completions_program = find_program('meson_generate_completions.py')
+ meson_go_fmt_program = find_program('meson_go_fmt.py')
+ 
+ sources = files(
+-  'toolbox.go',
+   'cmd/completion.go',
+   'cmd/create.go',
+   'cmd/enter.go',
+@@ -22,18 +17,18 @@ sources = files(
+   'cmd/utils.go',
+   'pkg/nvidia/nvidia.go',
+   'pkg/podman/container.go',
++  'pkg/podman/containerInspect_test.go',
+   'pkg/podman/errors.go',
+   'pkg/podman/podman.go',
+-  'pkg/podman/containerInspect_test.go',
+   'pkg/shell/shell.go',
+   'pkg/shell/shell_test.go',
+   'pkg/skopeo/skopeo.go',
+   'pkg/term/term.go',
+   'pkg/term/term_test.go',
+-  'pkg/utils/libsubid-wrappers.c',
+   'pkg/utils/arch.go',
+   'pkg/utils/errors.go',
+   'pkg/utils/fedora.go',
++  'pkg/utils/libsubid-wrappers.c',
+   'pkg/utils/rhel.go',
+   'pkg/utils/utils.go',
+   'pkg/utils/utils_cgo.go',
+@@ -41,49 +36,48 @@ sources = files(
+   'pkg/version/version.go',
+ )
+ 
+-cpu_family = host_machine.cpu_family()
+-endian = host_machine.endian()
++toolbox_go = custom_target(
++  'toolbox',
++  command: [
++    go,
++    'build',
++    '-C', meson.current_source_dir(),
++    '-trimpath',
++    '-buildmode=c-archive',
++    '-o', meson.project_build_root() + '/@OUTPUT@',
++    '@INPUT@',
++  ],
++  depend_files: sources,
++  input: 'toolbox.go',
++  output: 'toolbox.a',
++)
++
++cc_exe = cc.cmd_array().get(-1)
++readlink = find_program('readlink')
++dirname = find_program('dirname')
+ 
+-dynamic_linker = ''
+-if cpu_family == 'aarch64' and endian == 'little'
+-  dynamic_linker = '/lib/ld-linux-aarch64.so.1'
+-elif cpu_family == 'arm' and endian == 'little'
+-  dynamic_linker = '/lib/ld-linux-armhf.so.3'
+-elif cpu_family == 'loongarch64' and endian == 'little'
+-  dynamic_linker = '/lib64/ld-linux-loongarch-lp64d.so.1'
+-elif cpu_family == 'ppc64' and endian == 'little'
+-  dynamic_linker = '/lib64/ld64.so.2'
+-elif cpu_family == 's390x' and endian == 'big'
+-  dynamic_linker = '/lib/ld64.so.1'
+-elif cpu_family == 'x86' and endian == 'little'
+-  dynamic_linker = '/lib/ld-linux.so.2'
+-elif cpu_family == 'x86_64' and endian == 'little'
+-  dynamic_linker = '/lib64/ld-linux-x86-64.so.2'
+-elif cpu_family == 'riscv64' and endian == 'little'
+-  dynamic_linker = '/lib/ld-linux-riscv64-lp64d.so.1'
+-else
+-  host_machine_description = cpu_family + ' (' + endian + ' endian)'
+-  error('Please specify dynamic linker for:', host_machine_description)
+-endif
++libc_path = run_command(cc_exe, '--print-file-name=libc.so', capture: true, check: true).stdout()
++libc_canon = run_command(readlink, '--canonicalize', libc_path, capture: true, check: true).stdout()
++libc_dir = run_command(dirname, libc_canon, capture: true, check: true).stdout().strip()
+ 
+-message('Host machine dynamic linker:', dynamic_linker)
++message('Host machine libc:', libc_dir)
+ 
+-toolbox_go = custom_target(
++rpath = '/run/host' + libc_dir
++message('Setting rpath:', rpath)
++
++toolbox = executable(
+   'toolbox',
+-  command: [
+-    go_build_wrapper_program,
+-    meson.current_source_dir(),
+-    meson.project_build_root(),
+-    '@OUTPUT@',
+-    meson.project_version(),
+-    cc.cmd_array().get(-1),
+-    dynamic_linker,
+-    migration_path_for_coreos_toolbox.to_string(),
++  sources: [],
++  link_whole: toolbox_go,
++  link_args: [
++    '-Wl,-z,lazy',
++    '-Wl,--export-dynamic',
++    '-Wl,--unresolved-symbols=ignore-in-object-files',
+   ],
+-  input: sources,
++  build_rpath: rpath,
++  install_rpath: rpath,
+   install: true,
+   install_dir: get_option('bindir'),
+-  output: 'toolbox',
+ )
+ 
+ if bashcompletionsdir != ''
+@@ -91,15 +85,14 @@ if bashcompletionsdir != ''
+     'bash-completion',
+     capture: true,
+     command: [
+-      meson_generate_completions_program,
+-      meson.current_source_dir(),
++      toolbox,
++      'completion',
+       'bash',
+     ],
+-    depends: [toolbox_go],
+     install: true,
+     install_dir: bashcompletionsdir,
+     output: 'toolbox.bash',
+-)
++  )
+ endif
+ 
+ if fishcompletionsdir != ''
+@@ -107,35 +100,39 @@ if fishcompletionsdir != ''
+     'fish-completion',
+     capture: true,
+     command: [
+-      meson_generate_completions_program,
+-      meson.current_source_dir(),
++      toolbox,
++      'completion',
+       'fish',
+     ],
+-    depends: [toolbox_go],
+     install: true,
+     install_dir: fishcompletionsdir,
+     output: 'toolbox.fish',
+-)
++  )
+ endif
+ 
+ custom_target(
+   'zsh-completion',
+   capture: true,
+   command: [
+-    meson_generate_completions_program,
+-    meson.current_source_dir(),
++    toolbox,
++    'completion',
+     'zsh',
+   ],
+-  depends: [toolbox_go],
+   install: true,
+   install_dir: zshcompletionsdir,
+   output: '_toolbox',
+ )
+ 
+-if shellcheck.found()
+-  test('shellcheck src/go-build-wrapper', shellcheck, args: [go_build_wrapper_file])
+-endif
+-
+ test('go fmt', meson_go_fmt_program, args: [meson.current_source_dir()])
+-test('go vet', go, args: ['vet', '-c', '3', './...'], workdir: meson.current_source_dir())
+-test('go test', go, args: ['test', '-vet', 'off', './...'], workdir: meson.current_source_dir())
++test(
++  'go vet',
++  go,
++  args: ['vet', '-c', '3', './...'],
++  workdir: meson.current_source_dir(),
++)
++test(
++  'go test',
++  go,
++  args: ['test', '-vet', 'off', './...'],
++  workdir: meson.current_source_dir(),
++)
+\ No newline at end of file
+diff --git a/src/meson_generate_completions.py b/src/meson_generate_completions.py
+deleted file mode 100644
+index 6df8c71..0000000
+--- a/src/meson_generate_completions.py
++++ /dev/null
+@@ -1,34 +0,0 @@
+-#!/usr/bin/env python3
+-#
+-# Copyright © 2022 Ondřej Míchal
+-# Copyright © 2022 – 2024 Red Hat Inc.
+-#
+-# Licensed under the Apache License, Version 2.0 (the "License");
+-# you may not use this file except in compliance with the License.
+-# You may obtain a copy of the License at
+-#
+-#     http://www.apache.org/licenses/LICENSE-2.0
+-#
+-# Unless required by applicable law or agreed to in writing, software
+-# distributed under the License is distributed on an "AS IS" BASIS,
+-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-# See the License for the specific language governing permissions and
+-# limitations under the License.
+-#
+-
+-import os
+-import subprocess
+-import sys
+-
+-if len(sys.argv) != 3:
+-    print('{}: wrong arguments'.format(sys.argv[0]), file=sys.stderr)
+-    print('Usage: {} [SOURCE DIR] [COMPLETION TYPE]'.format(sys.argv[0]), file=sys.stderr)
+-    sys.exit(1)
+-
+-source_dir = sys.argv[1]
+-completion_type = sys.argv[2]
+-
+-os.chdir(source_dir)
+-output = subprocess.run(['go', 'run', '.', 'completion', completion_type], check=True)
+-
+-sys.exit(0)
+diff --git a/src/toolbox.go b/src/toolbox.go
+index 7714d1e..5535293 100644
+--- a/src/toolbox.go
++++ b/src/toolbox.go
+@@ -16,8 +16,11 @@
+ 
+ package main
+ 
++import "C"
++
+ import "github.com/containers/toolbox/cmd"
+ 
++//export main
+ func main() {
+ 	cmd.Execute()
+ }
+-- 
+2.51.0
+

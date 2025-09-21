@@ -1,0 +1,35 @@
+From 289b8af899cbe47d55e53dd31c68d86e95054c8e Mon Sep 17 00:00:00 2001
+From: PeakKS <bbatson101@gmail.com>
+Date: Sun, 21 Sep 2025 10:59:47 -0400
+Subject: [PATCH 3/3] Don't explicitly pass toolbox.go to build
+
+---
+ src/meson.build | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/src/meson.build b/src/meson.build
+index 60f4e12..75560ac 100644
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -34,6 +34,7 @@ sources = files(
+   'pkg/utils/utils_cgo.go',
+   'pkg/utils/utils_test.go',
+   'pkg/version/version.go',
++  'toolbox.go',
+ )
+ 
+ go_tags = []
+@@ -54,10 +55,8 @@ toolbox_go = custom_target(
+     '-X github.com/containers/toolbox/pkg/version.currentVersion='
+     + meson.project_version(),
+     '-o', meson.project_build_root() + '/@OUTPUT@',
+-    '@INPUT@',
+   ],
+   depend_files: sources,
+-  input: 'toolbox.go',
+   output: 'toolbox.a',
+ )
+ 
+-- 
+2.51.0
+
